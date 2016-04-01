@@ -1,0 +1,7 @@
+,Lying,Sitting,StairClimbing,Standing,Walking,Wheeling
+Lying,1317,3,14,66,0,26
+Sitting,22,667,1,83,4,409
+StairClimbing,2,4,339,47,307,1
+Standing,37,67,22,1071,68,4
+Walking,0,6,87,47,1738,1
+Wheeling,1,153,3,21,5,1657
