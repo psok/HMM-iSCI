@@ -13,7 +13,9 @@ class Constants():
     TenFold = 'TenFold'
     ResultsFolderList = [SubjectWise,TenFold]
     
-    FINAL_RESULTS_FOLDER = path+'/FinalResults/'
+    FINAL_RESULTS_FOLDER = path + '/HMMResults/'
+    
+    STATIC_RESULTS_FOLDER = path + '/StaticClassifierResults/'
     
         
     #----------PreprocessData.py-------------------#

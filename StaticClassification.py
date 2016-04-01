@@ -9,7 +9,6 @@ from sklearn import svm
 from Util import *
 from Constants import *
 from sklearn.grid_search import GridSearchCV
-from sklearn.linear_model import SGDClassifier
 
 class MyStaticClassifiers:
     """A simple class that has methods to train and cross validate  different classifiers such as
@@ -38,7 +37,7 @@ class MyStaticClassifiers:
         tuned_parameters = [{'C': [1, 10, 100, 1000], 'penalty':['l1', 'l2']}]
         model = GridSearchCV(linear_model.LogisticRegression(C=1, probability=True), tuned_parameters, cv=5) 
         model.fit(X_train,y_train)
-        print(model.best_estimator_)
+        #print(model.best_estimator_)
         return model
         
     def NBMeanAndVariance(self,X,y):
@@ -89,7 +88,7 @@ class MyStaticClassifiers:
         tuned_parameters = [{'n_neighbors': [1, 10, 100]}]
         model = GridSearchCV(KNeighborsClassifier(n_neighbors=1, probability=True), tuned_parameters, cv=5) 
         model.fit(X_train,y_train)
-        print(model.best_estimator_)
+        #print(model.best_estimator_)
         return model
      
     # Cannot be applied to the data in question since not enough neighbors are found in a given radius.      
@@ -129,7 +128,7 @@ class MyStaticClassifiers:
         tuned_parameters = [{'min_samples_split': [1, 10, 100, 1000]}]
         model = GridSearchCV(DecisionTreeClassifier(min_samples_split=1, probability=True), tuned_parameters, cv=5)
         model.fit(X_train,y_train)
-        print(model.best_estimator_)
+        #print(model.best_estimator_)
         return model
         
         
@@ -146,12 +145,14 @@ class MyStaticClassifiers:
         model: The trained nearest neighbor model."""
         
         #model = svm.SVC(C=1, kernel = 'linear', probability=True)
-        tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000]},
-                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+        C = [1, 10, 100, 1000]
+        gamma = [1e-3, 1e-4]
+        tuned_parameters = [{'kernel': ['rbf'], 'gamma': gamma,'C': C},
+                    {'kernel': ['linear'], 'C': C}]
                     
         model = GridSearchCV(svm.SVC(C=1.0, probability=True), tuned_parameters, cv=5)   
         model.fit(X_train,y_train)
-        print(model.best_estimator_)
+        #print(model.best_estimator_)
         return model
    
     # Cannot be applied when using this in conjunction with dynamic estimation since this does not give the probability
@@ -205,11 +206,17 @@ class MyStaticClassifiers:
         newTargetList = []
         samples = 0
         
+        hyperParameters = ""
+        accuracy_str = ""
+    
         for i in range(listLength):
             samples += len(featuresMaster[i])
             features = np.array(featuresMaster[i])
             target = np.array(targetMaster[i])  
             model = func(features,target)
+            hyperParameters += "Subject_" + str(i+1) + "\n"
+            hyperParameters += str(model.best_estimator_) + "\n"
+            
             #Get the probability of success LR with cross validation.
             predicted, probas, cvScore, newTarget = tenFoldCrossValidator(model,features,target)
                 
@@ -218,7 +225,8 @@ class MyStaticClassifiers:
             predictedList.append(predicted)
             newTargetList.append(newTarget)
             
-            print(('Cross validated score Subject_' + str(i+1) + ' = ' + str(cvScore)))
+            print(('20-Fold Accuracy Subject_' + str(i+1) + ' = ' + str(cvScore)))
+            accuracy_str += '20-Fold Accuracy Subject_' + str(i+1) + ' = ' + str(cvScore) + '\n'
             
             #Write the stateProbabilities, the modelStates and the target activities of each subject to a .csv file.
             filename = filePath + 'Subject_'+ str(i+1) +'.csv'
@@ -228,8 +236,19 @@ class MyStaticClassifiers:
             df.to_csv(filename)
         
         scores = np.array(scores)
-        print(('Overall Accuracy after 20 fold Cross-validation = '+str(np.mean(scores))+'%'))
+        print(('Overall 20-fold Accuracy = '+str(np.mean(scores))+'%'))
+        accuracy_str += 'Overall 20-fold Accuracy = '+str(np.mean(scores))+'%'
         
+        #Write hyperparameters to file
+        filename = filePath + "Hyperparameters.txt"
+        with open(filename, "w") as textfile:
+            textfile.write(hyperParameters)
+        
+        #Write accuracy of each subject to file
+        filename = filePath + "Accuracy.txt"
+        with open(filename, "w") as textfile:
+            textfile.write(accuracy_str)
+            
         print('Total samples = ' + str(samples))
         return predictedList,probabilitiesList,newTargetList
 
@@ -265,6 +284,8 @@ class MyStaticClassifiers:
         then trained with the train_features and train_target arrays and tested with the test_features and test_target arrays.
         '''
 
+        hyperParameters = ""
+        accuracy_str = ""
         for i in range(listLength):
             train_features = []
             train_target = []
@@ -284,6 +305,8 @@ class MyStaticClassifiers:
             train_target = np.array(train_target)
 
             model = func(train_features,train_target)
+            hyperParameters += "Subject_" + str(i+1) + "\n"
+            hyperParameters += str(model.best_estimator_) + "\n"
 
             #Get the probability of each state from the prediction of model
             stateProbabilities = model.predict_proba(test_features)
@@ -297,7 +320,8 @@ class MyStaticClassifiers:
             #Get the probability of success of the model
             modelScore = (model.score(test_features,test_target))*100.0
             scores.append(modelScore)
-            print(('Subject-Wise Validation Subject_' + str(i+1) + ' = ' + str(modelScore)))
+            print(('Subject-Wise Accuracy Subject_' + str(i+1) + ' = ' + str(modelScore)))
+            accuracy_str += 'Subject-Wise Accuracy Subject_' + str(i+1) + ' = ' + str(modelScore) + '\n'
             
             #Write the stateProbabilities, the modelStates and the target activities of each subject to a .csv file.
             filename = filePath + 'Subject_' + str(i+1) + '.csv'      
@@ -306,6 +330,17 @@ class MyStaticClassifiers:
             df['target'] = test_target
             df.to_csv(filename)
     
-        print(('Overall Subject-Wise Validation Accuracy = '+str(np.mean(scores))+'%'))
+        print(('Overall Subject-Wise Accuracy = '+str(np.mean(scores))+'%'))
+        accuracy_str += 'Overall Subject-Wise Accuracy = '+str(np.mean(scores))+'%'
+        
+        # Write hyperparameters to file
+        filename = filePath + "Hyperparameters.txt"
+        with open(filename, "w") as textfile:
+            textfile.write(hyperParameters)
+            
+        # Write accuracy of each subject to file
+        filename = filePath + "Accuracy.txt"
+        with open(filename, "w") as textfile:
+            textfile.write(accuracy_str)
         
         return predictedList,probabilitiesList

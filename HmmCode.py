@@ -1,5 +1,5 @@
 # Author Asma Mehjabeen <amehjabeen@luc.edu>
-# Modified by Pichleap Sok <psok@luc.edu>
+# Modified by Pichleap Sok (Jessie)
 import pandas as pd
 from HMMClassification import *  
 from StaticClassification import * 
@@ -69,8 +69,10 @@ def main():
     methodName = classifierObject.SVMClassifier
     folder = methodName.__name__
     currentTime = datetime.datetime.now()
-    staticFilePath = Constants.path+'/StaticClassifierResult/' + folder +'/' + str(currentTime) + '/'
-    os.makedirs(staticFilePath) 
+    
+    staticFilePath = Constants.STATIC_RESULTS_FOLDER + folder +'/' + str(currentTime) + '/'
+    if not os.path.exists(staticFilePath):       
+        os.makedirs(staticFilePath) 
 
     validation = Constants.TenFold
     #validation = Constants.SubjectWise
@@ -93,7 +95,8 @@ def main():
     
     folderToSave = validation
     filePath = Constants.FINAL_RESULTS_FOLDER + folderToSave + '/' + str(currentTime) + '/'
-    os.makedirs(filePath)
+    if not os.path.exists(filePath):    
+        os.makedirs(filePath)
 
     df_confusion, df_precision, df_recall = errorMatrix(predictedList, targetMaster)
     saveToCsv(df_confusion, filePath + "Error_Matrix.csv")
@@ -105,9 +108,9 @@ def main():
     
     
     if validation == Constants.TenFold:
-        HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList)
+        HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList, filePath)
     elif validation == Constants.SubjectWise:
-        HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList)
+        HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList, filePath)
     
     df_confusion, df_precision, df_recall = errorMatrix(HmmStatesList, targetMaster)
     saveToCsv(df_confusion, filePath + "HMM_Error_Matrix.csv")
@@ -133,7 +136,11 @@ def main():
         else: 
             df.to_csv(overalResultFilename)
     elapsed_time = time.time() - start_time
-
+    elapsed_time = datetime.timedelta(seconds=elapsed_time)
     print("Duration: " + str(elapsed_time))
+    
+    filename = filePath + "Accuracy.txt"
+    with open(filename, "a") as textfile:
+        textfile.write('\n\nTotal running time: ' + str(elapsed_time))
 main()
     

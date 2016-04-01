@@ -65,8 +65,6 @@ class HMMClassification:
                 remainder -= initial_state_prob[i]
             initial_state_prob[lastIndex] = remainder
             
-        #print ("Fixed start prob sum by adding: "+str(remainder)+" to the first element")
-        #print("Vector sum: "+str(sum(initial_state_prob)))
         initial_state_prob = np.array(initial_state_prob)
         '''Check if one of the probabilities is 0. If yes, normalize (This check is also done in the sklearn library. It's done here
         to avoid normalization of the matrix in the library code which would mess up the row sum again by a small constant and thus
@@ -116,6 +114,16 @@ class HMMClassification:
         if not np.alltrue(transition_matrix):
             normalize(transition_matrix, axis=1)
             
+#==============================================================================
+#         #Save transition_matrix and initial probabilities to file 
+#         #(One time only because transition matrix is consistent)
+#         filename = Constants.FINAL_RESULTS_FOLDER + 'HMMParameters.csv'
+#         df = pd.DataFrame(transition_matrix, index = activities, columns = activities)
+#         df.to_csv(filename)
+#         df = pd.DataFrame(initial_state_prob)
+#         df.to_csv(filename, index_col=False, header=False, mode = 'a')
+#==============================================================================
+        
         return transition_matrix,initial_state_prob
             
     def getMeans(self,features,target):
@@ -216,7 +224,7 @@ class HMMClassification:
                 mySum += 1
         return (mySum/float(len(B)))
         
-    def hmm10foldValidation(self,targetMaster,probabilitiesMaster):
+    def hmm10foldValidation(self,targetMaster,probabilitiesMaster, filePath):
 
         listLength = len(targetMaster)
         
@@ -230,6 +238,8 @@ class HMMClassification:
         train_features = [item for sublist in probabilitiesMaster for item in sublist]
         train_target = [item for sublist in targetMaster for item in sublist]
         meansArray = self.getMeans(train_features,train_target)
+        
+        accuracy_str = ""
         
         for i in range(listLength):
             train = np.array(probabilitiesMaster[i])
@@ -258,11 +268,20 @@ class HMMClassification:
             HMMScoresList.append(score)
             HMMStatesList.append(predicted)
             newTargetList.append(newTarget)
-            print(('HMM Classifier 20 fold Accuracy Subject_'+str(i+1)+' = '+str(score)+'%'))
-        print(('Overall HMM Classifier 20 fold Accuracy = '+str(np.mean(HMMScoresList))+'%'))
+            print(('HMM 20-fold Accuracy Subject_' + str(i+1) + ' = ' + str(score) + '%'))
+            accuracy_str += 'HMM 20-fold Accuracy Subject_' + str(i+1) + ' = ' + str(score) + '%' + '\n'
+            
+        print(('Overall HMM 20-fold Accuracy = ' + str(np.mean(HMMScoresList)) + '%'))
+        accuracy_str += 'Overall HMM 20-fold Accuracy = ' + str(np.mean(HMMScoresList)) + '%'
+        
+        # Write accuracy of each subject to file
+        filename = filePath + "Accuracy.txt"
+        with open(filename, "w") as textfile:
+            textfile.write(accuracy_str)
+            
         return HMMStatesList,newTargetList
                         
-    def hmmClassifierSubjectWiseValidation(self,targetMaster,probabilitiesMaster):
+    def hmmClassifierSubjectWiseValidation(self,targetMaster,probabilitiesMaster, filePath):
         """A method written to cross validate the HMM classifier using subject wise cross validation.
          
         Parameters
@@ -294,7 +313,8 @@ class HMMClassification:
         The features and target activities of the remaining subject are in test_features and test_target arrays respectively. The model is
         then trained with the train_features and train_target arrays and tested with the test_features and test_target arrays.
         '''
-                
+        
+        accuracy_str = ""
         for i in range(listLength):
             train_lrProb = []
             train_target = []
@@ -325,9 +345,16 @@ class HMMClassification:
             HMMScores.append(score)  
             HMMStatesList.append(hmmStates)
             #print the accuracy
-            print(('HMM Classifier Subject-Wise Accuracy Subject_'+str(i+1)+' = '+str(score)+'%'))
+            print(('HMM Subject-Wise Accuracy Subject_'+str(i+1)+' = '+str(score)+'%'))
+            accuracy_str += 'HMM Subject-Wise Accuracy Subject_'+str(i+1)+' = '+str(score)+'%' + '\n'
 
-        print(('Overall HMM Classifier Subject-Wise Validation Accuracy = '+str(np.mean(HMMScores))+'%'))
+        print(('Overall HMM Subject-Wise Validation Accuracy = '+str(np.mean(HMMScores))+'%'))
+        accuracy_str += 'Overall HMM Subject-Wise Validation Accuracy = '+str(np.mean(HMMScores))+'%'
+        
+        # Write accuracy of each subject to file
+        filename = filePath + "Accuracy.txt"
+        with open(filename, "w") as textfile:
+            textfile.write(accuracy_str)
 
         return HMMStatesList
 

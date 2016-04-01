@@ -123,7 +123,7 @@ def getFTArrays():
     """
     targetMaster = []
     featuresMaster = []
-    path = '/Users/Pichleap/Dropbox/GraduateLife/Thesis/hmm/Code/' + 'FeaturesTarget/Subject_'
+    path = Constants.FEATURES_TARGET + 'Subject_'
     for i in range(1,14):
         df = pd.read_csv(path+str(i)+'.csv', error_bad_lines=False)
         target = np.array(df['target'].tolist())
@@ -170,9 +170,9 @@ def cleanData(featuresMaster, targetMaster):
 
     return featuresMaster, targetMaster
 
-def writeToExcel(dataFrame):
+def writeToExcel(dataFram,filename):
     '''Writes the data to an excel file'''
-    writer = pd.ExcelWriter('/Users/Pichleap/Dropbox/GraduateLife/Thesis/hmm/Code/DataFRAMETEST.xls', date_format='hh:mm:ss.000')
+    writer = pd.ExcelWriter(filename, date_format='hh:mm:ss.000')
     dataFrame.to_excel(writer)
     writer.close()
     #print dataFrame
@@ -180,6 +180,5 @@ def writeToExcel(dataFrame):
             
 def writeToCSV(dataFrame,filename):
     '''Writes the data to a csv file'''
-    dataFrame = pd.DataFrame(dataFrame)
     dataFrame.to_csv(filename)
     
