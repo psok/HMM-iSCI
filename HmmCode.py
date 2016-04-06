@@ -66,7 +66,7 @@ def main():
     # classifierObject: logisticRegression, naiveBayesClassifier, kNearestNeighborsClassifier, decisionTreeClassification, SVMClassifier
     #linearSVMClassifier
     classifierObject = MyStaticClassifiers()
-    methodName = classifierObject.SVMClassifier
+    methodName = classifierObject.logisticRegression
     folder = methodName.__name__
     currentTime = datetime.datetime.now()
     
@@ -137,7 +137,7 @@ def main():
             df.to_csv(overalResultFilename)
     elapsed_time = time.time() - start_time
     elapsed_time = datetime.timedelta(seconds=elapsed_time)
-    print("Duration: " + str(elapsed_time))
+    print("\nTotal running time: " + str(elapsed_time))
     
     filename = filePath + "Accuracy.txt"
     with open(filename, "a") as textfile:

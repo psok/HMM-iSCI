@@ -35,7 +35,7 @@ class MyStaticClassifiers:
         
         #model = linear_model.LogisticRegression(C=1, penalty='l1')
         tuned_parameters = [{'C': [1, 10, 100, 1000], 'penalty':['l1', 'l2']}]
-        model = GridSearchCV(linear_model.LogisticRegression(C=1, probability=True), tuned_parameters, cv=5) 
+        model = GridSearchCV(linear_model.LogisticRegression(C=1), tuned_parameters, cv=5) 
         model.fit(X_train,y_train)
         #print(model.best_estimator_)
         return model
