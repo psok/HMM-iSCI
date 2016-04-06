@@ -86,7 +86,7 @@ class MyStaticClassifiers:
         
         #model = KNeighborsClassifier(n_neighbors=1)
         tuned_parameters = [{'n_neighbors': [1, 10, 100]}]
-        model = GridSearchCV(KNeighborsClassifier(n_neighbors=1, probability=True), tuned_parameters, cv=5) 
+        model = GridSearchCV(KNeighborsClassifier(n_neighbors=1), tuned_parameters, cv=5) 
         model.fit(X_train,y_train)
         #print(model.best_estimator_)
         return model
@@ -126,7 +126,7 @@ class MyStaticClassifiers:
         
         #model = DecisionTreeClassifier(random_state=0)
         tuned_parameters = [{'min_samples_split': [1, 10, 100, 1000]}]
-        model = GridSearchCV(DecisionTreeClassifier(min_samples_split=1, probability=True), tuned_parameters, cv=5)
+        model = GridSearchCV(DecisionTreeClassifier(min_samples_split=1), tuned_parameters, cv=5)
         model.fit(X_train,y_train)
         #print(model.best_estimator_)
         return model
@@ -147,8 +147,8 @@ class MyStaticClassifiers:
         #model = svm.SVC(C=1, kernel = 'linear', probability=True)
         C = [1, 10, 100, 1000]
         gamma = [1e-3, 1e-4]
-        tuned_parameters = [{'kernel': ['rbf'], 'gamma': gamma,'C': C},
-                    {'kernel': ['linear'], 'C': C}]
+        tuned_parameters = [{'kernel': ['linear'], 'C': C},
+                            {'kernel': ['rbf'], 'gamma': gamma,'C': C}]
                     
         model = GridSearchCV(svm.SVC(C=1.0, probability=True), tuned_parameters, cv=5)   
         model.fit(X_train,y_train)
@@ -245,7 +245,7 @@ class MyStaticClassifiers:
             textfile.write(hyperParameters)
         
         #Write accuracy of each subject to file
-        filename = filePath + "Accuracy.txt"
+        filename = filePath + Constants.StaticFolder + '_20Fold_Accuracy.txt'
         with open(filename, "w") as textfile:
             textfile.write(accuracy_str)
             
@@ -339,7 +339,7 @@ class MyStaticClassifiers:
             textfile.write(hyperParameters)
             
         # Write accuracy of each subject to file
-        filename = filePath + "Accuracy.txt"
+        filename = filePath + Constants.StaticFolder + '_SubjectWise_Accuracy.txt'
         with open(filename, "w") as textfile:
             textfile.write(accuracy_str)
         

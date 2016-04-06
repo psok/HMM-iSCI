@@ -66,16 +66,23 @@ def main():
     # classifierObject: logisticRegression, naiveBayesClassifier, kNearestNeighborsClassifier, decisionTreeClassification, SVMClassifier
     #linearSVMClassifier
     classifierObject = MyStaticClassifiers()
-    methodName = classifierObject.logisticRegression
+    methodName = classifierObject.SVMClassifier
     folder = methodName.__name__
-    currentTime = datetime.datetime.now()
+#==============================================================================
+#     today = datetime.date.today()
+#     currentTime = datetime.datetime.now()
+#     newFolder = str(today) + '-' + str(currentTime.hour) + '-' + str(currentTime.minute) + '-' + str(currentTime.second)
+#==============================================================================
     
-    staticFilePath = Constants.STATIC_RESULTS_FOLDER + folder +'/' + str(currentTime) + '/'
+    #validation = Constants.TenFold
+    validation = Constants.SubjectWise
+    
+#    filePath = Constants.FINAL_RESULTS_FOLDER + folder +'/' + newFolder + '/' + validation + '/'
+    filePath = Constants.FINAL_RESULTS_FOLDER + folder + '/' + validation + '/'
+    
+    staticFilePath = filePath + Constants.StaticFolder + '/'
     if not os.path.exists(staticFilePath):       
         os.makedirs(staticFilePath) 
-
-    validation = Constants.TenFold
-    #validation = Constants.SubjectWise
     
     hmm = HMMClassification()
     featuresMaster, targetMaster = getFTArrays()
@@ -92,11 +99,6 @@ def main():
                                                                         featuresMaster, 
                                                                         targetMaster, 
                                                                         staticFilePath)
-    
-    folderToSave = validation
-    filePath = Constants.FINAL_RESULTS_FOLDER + folderToSave + '/' + str(currentTime) + '/'
-    if not os.path.exists(filePath):    
-        os.makedirs(filePath)
 
     df_confusion, df_precision, df_recall = errorMatrix(predictedList, targetMaster)
     saveToCsv(df_confusion, filePath + "Error_Matrix.csv")
@@ -106,11 +108,15 @@ def main():
     #print(df_precision)
     #print(df_recall)
     
+    hmmFilePath = filePath + Constants.HMMFolder + '/'
+    if not os.path.exists(hmmFilePath):    
+        os.makedirs(hmmFilePath)
     
     if validation == Constants.TenFold:
-        HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList, filePath)
+        HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList, hmmFilePath)
     elif validation == Constants.SubjectWise:
-        HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList, filePath)
+        HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList, hmmFilePath)
+    
     
     df_confusion, df_precision, df_recall = errorMatrix(HmmStatesList, targetMaster)
     saveToCsv(df_confusion, filePath + "HMM_Error_Matrix.csv")
@@ -119,13 +125,11 @@ def main():
     print(df_confusion)
     #print(df_precision)
     #print(df_recall)
-        
-    #HmmStatesList = hmm.HmmPerSubject(targetMaster,probabilitiesList)
     
-    overalResultFilename = filePath + 'Overall_Result.csv'      
+    overalResultFilename = hmmFilePath + 'Overall_Result.csv'      
         
     for i in range(len(targetMaster)):
-        filename = filePath+ 'Subject_'+str(i+1)+'.csv'      
+        filename = hmmFilePath+ 'Subject_'+str(i+1)+'.csv'      
         df = pd.DataFrame(predictedList[i])
         df.columns = ['StaticClassifierStates']
         df['HmmStates'] = HmmStatesList[i]
@@ -139,8 +143,8 @@ def main():
     elapsed_time = datetime.timedelta(seconds=elapsed_time)
     print("\nTotal running time: " + str(elapsed_time))
     
-    filename = filePath + "Accuracy.txt"
-    with open(filename, "a") as textfile:
+    filename = filePath + "Duration.txt"
+    with open(filename, "w") as textfile:
         textfile.write('\n\nTotal running time: ' + str(elapsed_time))
 main()
     

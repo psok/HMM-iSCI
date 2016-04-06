@@ -275,7 +275,7 @@ class HMMClassification:
         accuracy_str += 'Overall HMM 20-fold Accuracy = ' + str(np.mean(HMMScoresList)) + '%'
         
         # Write accuracy of each subject to file
-        filename = filePath + "Accuracy.txt"
+        filename = filePath + Constants.HMMFolder + '_20Fold_Accuracy.txt'
         with open(filename, "w") as textfile:
             textfile.write(accuracy_str)
             
@@ -352,7 +352,7 @@ class HMMClassification:
         accuracy_str += 'Overall HMM Subject-Wise Validation Accuracy = '+str(np.mean(HMMScores))+'%'
         
         # Write accuracy of each subject to file
-        filename = filePath + "Accuracy.txt"
+        filename = filePath + Constants.HMMFolder + '_SubjectWise_Accuracy.txt'
         with open(filename, "w") as textfile:
             textfile.write(accuracy_str)
 
