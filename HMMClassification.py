@@ -232,7 +232,7 @@ class HMMClassification:
         HMMStatesList = []
         newTargetList = []
         
-        activities = np.array(['Lying', 'Sitting', 'StairClimbing', 'Standing', 'Walking', 'Wheeling'], dtype='<U13')
+        activities = np.array(['Lying', 'Sitting', 'Wheeling', 'Standing', 'Walking', 'StairClimbing'], dtype='<U13')
         markov_chain = [item for sublist in targetMaster for item in sublist]   #just a flatten list of targetMaster      
         transition_prob, initial_state_vector = self.getHMMProbabilities(markov_chain, activities)
         train_features = [item for sublist in probabilitiesMaster for item in sublist]
@@ -245,7 +245,7 @@ class HMMClassification:
             train = np.array(probabilitiesMaster[i])
             target = np.array(targetMaster[i])
             
-            kf_total = cross_validation.KFold(len(train), n_folds=20, shuffle=False, random_state=5)
+            kf_total = cross_validation.KFold(len(train), n_folds=15, shuffle=False, random_state=6)
         
             scores = []
             predicted = []

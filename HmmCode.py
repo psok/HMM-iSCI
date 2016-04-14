@@ -41,7 +41,7 @@ def errorMatrix(statesList, targetMaster):
     sum_row = np.sum(states_matrix, axis=1)
     for row in range(no_states):
         for col in range(no_states):
-            precision_matrix[row][col] = (states_matrix[row][col] / sum_row[row]) * 100
+            precision_matrix[row][col] = (states_matrix[row][col] / sum_row[row])
         
     # Calculate the recall for each activity: True Positive / (True Positive + False Negative)
     recall_matrix = []
@@ -50,7 +50,7 @@ def errorMatrix(statesList, targetMaster):
     sum_col = np.sum(states_matrix, axis=0)
     for col in range(no_states):
         for row in range(no_states):
-            recall_matrix[row][col] = (states_matrix[row][col] / sum_col[col]) * 100
+            recall_matrix[row][col] = (states_matrix[row][col] / sum_col[col])
         
     df_confusion = pd.DataFrame(states_matrix, index = ordered_states,
                           columns = ordered_states)
@@ -64,87 +64,87 @@ def errorMatrix(statesList, targetMaster):
 def main():    
     start_time = time.time()
     # classifierObject: logisticRegression, naiveBayesClassifier, kNearestNeighborsClassifier, decisionTreeClassification, SVMClassifier
-    #linearSVMClassifier
+    # randomForestClassifier
+    
     classifierObject = MyStaticClassifiers()
-    methodName = classifierObject.SVMClassifier
-    folder = methodName.__name__
-#==============================================================================
-#     today = datetime.date.today()
-#     currentTime = datetime.datetime.now()
-#     newFolder = str(today) + '-' + str(currentTime.hour) + '-' + str(currentTime.minute) + '-' + str(currentTime.second)
-#==============================================================================
-    
-    #validation = Constants.TenFold
-    validation = Constants.SubjectWise
-    
-#    filePath = Constants.FINAL_RESULTS_FOLDER + folder +'/' + newFolder + '/' + validation + '/'
-    filePath = Constants.FINAL_RESULTS_FOLDER + folder + '/' + validation + '/'
-    
-    staticFilePath = filePath + Constants.StaticFolder + '/'
-    if not os.path.exists(staticFilePath):       
-        os.makedirs(staticFilePath) 
-    
-    hmm = HMMClassification()
-    featuresMaster, targetMaster = getFTArrays()
-    
-    if validation == Constants.TenFold:
-        predictedList, probabilitiesList, targetMaster = classifierObject.tenFoldValidationOnSubjects(
-                                                                        methodName, 
-                                                                        featuresMaster, 
-                                                                        targetMaster, 
-                                                                        staticFilePath)
-    elif validation == Constants.SubjectWise:
-        predictedList, probabilitiesList = classifierObject.subjectWiseCrossValidation(
-                                                                        methodName,
-                                                                        featuresMaster, 
-                                                                        targetMaster, 
-                                                                        staticFilePath)
+    methodNames = [classifierObject.SVMClassifier, classifierObject.logisticRegression, classifierObject.decisionTreeClassification, 
+                   classifierObject.kNearestNeighborsClassifier, classifierObject.naiveBayesClassifier, classifierObject.randomForestClassifier]
 
-    df_confusion, df_precision, df_recall = errorMatrix(predictedList, targetMaster)
-    saveToCsv(df_confusion, filePath + "Error_Matrix.csv")
-    saveToCsv(df_precision, filePath + "Precision_Matrix.csv")
-    saveToCsv(df_recall, filePath + "Recall_Matrix.csv")
-    print(df_confusion)
-    #print(df_precision)
-    #print(df_recall)
-    
-    hmmFilePath = filePath + Constants.HMMFolder + '/'
-    if not os.path.exists(hmmFilePath):    
-        os.makedirs(hmmFilePath)
-    
-    if validation == Constants.TenFold:
-        HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList, hmmFilePath)
-    elif validation == Constants.SubjectWise:
-        HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList, hmmFilePath)
-    
-    
-    df_confusion, df_precision, df_recall = errorMatrix(HmmStatesList, targetMaster)
-    saveToCsv(df_confusion, filePath + "HMM_Error_Matrix.csv")
-    saveToCsv(df_precision, filePath + "HMM_Precision_Matrix.csv")
-    saveToCsv(df_recall, filePath + "HMM_Recall_Matrix.csv")
-    print(df_confusion)
-    #print(df_precision)
-    #print(df_recall)
-    
-    overalResultFilename = hmmFilePath + 'Overall_Result.csv'      
+    for methodName in methodNames:
         
-    for i in range(len(targetMaster)):
-        filename = hmmFilePath+ 'Subject_'+str(i+1)+'.csv'      
-        df = pd.DataFrame(predictedList[i])
-        df.columns = ['StaticClassifierStates']
-        df['HmmStates'] = HmmStatesList[i]
-        df['target'] = targetMaster[i]
-        df.to_csv(filename)
-        if i>1:
-            df.to_csv(overalResultFilename, index_col=False, header=False, mode = 'a')
-        else: 
-            df.to_csv(overalResultFilename)
-    elapsed_time = time.time() - start_time
-    elapsed_time = datetime.timedelta(seconds=elapsed_time)
-    print("\nTotal running time: " + str(elapsed_time))
-    
-    filename = filePath + "Duration.txt"
-    with open(filename, "w") as textfile:
-        textfile.write('\n\nTotal running time: ' + str(elapsed_time))
+        folder = methodName.__name__
+        print(folder)
+        validations = [Constants.TenFold, Constants.SubjectWise]
+        for validation in validations:
+            #validation = Constants.SubjectWise
+            
+            filePath = Constants.FINAL_RESULTS_FOLDER + folder + '/' + validation + '/'
+            
+            staticFilePath = filePath + Constants.StaticFolder + '/'
+            if not os.path.exists(staticFilePath):       
+                os.makedirs(staticFilePath) 
+            
+            hmm = HMMClassification()
+            featuresMaster, targetMaster = getFTArrays()
+            
+            if validation == Constants.TenFold:
+                predictedList, probabilitiesList, targetMaster = classifierObject.tenFoldValidationOnSubjects(
+                                                                                methodName, 
+                                                                                featuresMaster, 
+                                                                                targetMaster, 
+                                                                                staticFilePath)
+            elif validation == Constants.SubjectWise:
+                predictedList, probabilitiesList = classifierObject.subjectWiseCrossValidation(
+                                                                                methodName,
+                                                                                featuresMaster, 
+                                                                                targetMaster, 
+                                                                                staticFilePath)
+        
+            df_confusion, df_precision, df_recall = errorMatrix(predictedList, targetMaster)
+            saveToCsv(df_confusion, filePath + "Error_Matrix.csv")
+            saveToCsv(df_precision, filePath + "Precision_Matrix.csv")
+            saveToCsv(df_recall, filePath + "Recall_Matrix.csv")
+            print(df_confusion)
+            #print(df_precision)
+            #print(df_recall)
+            
+            hmmFilePath = filePath + Constants.HMMFolder + '/'
+            if not os.path.exists(hmmFilePath):    
+                os.makedirs(hmmFilePath)
+            
+            if validation == Constants.TenFold:
+                HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList, hmmFilePath)
+            elif validation == Constants.SubjectWise:
+                HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList, hmmFilePath)
+            
+            
+            df_confusion, df_precision, df_recall = errorMatrix(HmmStatesList, targetMaster)
+            saveToCsv(df_confusion, filePath + "HMM_Error_Matrix.csv")
+            saveToCsv(df_precision, filePath + "HMM_Precision_Matrix.csv")
+            saveToCsv(df_recall, filePath + "HMM_Recall_Matrix.csv")
+            print(df_confusion)
+            #print(df_precision)
+            #print(df_recall)
+            
+            overalResultFilename = hmmFilePath + 'Overall_Result.csv'      
+                
+            for i in range(len(targetMaster)):
+                filename = hmmFilePath+ 'Subject_'+str(i+1)+'.csv'      
+                df = pd.DataFrame(predictedList[i])
+                df.columns = ['StaticClassifierStates']
+                df['HmmStates'] = HmmStatesList[i]
+                df['target'] = targetMaster[i]
+                df.to_csv(filename)
+                if i>1:
+                    df.to_csv(overalResultFilename, index_col=False, header=False, mode = 'a')
+                else: 
+                    df.to_csv(overalResultFilename)
+            elapsed_time = time.time() - start_time
+            elapsed_time = datetime.timedelta(seconds=elapsed_time)
+            print("\nTotal running time: " + str(elapsed_time))
+            
+            filename = filePath + "Duration.txt"
+            with open(filename, "w") as textfile:
+                textfile.write('Total running time: ' + str(elapsed_time))
 main()
     

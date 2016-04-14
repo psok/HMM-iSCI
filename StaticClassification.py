@@ -5,10 +5,12 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import RadiusNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from Util import *
 from Constants import *
 from sklearn.grid_search import GridSearchCV
+
 
 class MyStaticClassifiers:
     """A simple class that has methods to train and cross validate  different classifiers such as
@@ -21,6 +23,13 @@ class MyStaticClassifiers:
         -Radius Neighbor Classifier (does not work with the iSCI patient data set)"""
     
     
+    def randomForestClassifier(self, X_train, y_train):
+        tuned_parameters = [{'n_estimators': [1, 10, 100, 1000]}]
+        model = GridSearchCV(RandomForestClassifier(n_estimators=10), tuned_parameters, cv=5) 
+        model.fit(X_train, y_train)
+        print(model.best_estimator_)
+        return model
+        
     def logisticRegression(self,X_train,y_train):
         """Method to train a regularized logistic regression classifier
         
@@ -37,7 +46,7 @@ class MyStaticClassifiers:
         tuned_parameters = [{'C': [1, 10, 100, 1000], 'penalty':['l1', 'l2']}]
         model = GridSearchCV(linear_model.LogisticRegression(C=1), tuned_parameters, cv=5) 
         model.fit(X_train,y_train)
-        #print(model.best_estimator_)
+        print(model.best_estimator_)
         return model
         
     def NBMeanAndVariance(self,X,y):
@@ -214,8 +223,9 @@ class MyStaticClassifiers:
             features = np.array(featuresMaster[i])
             target = np.array(targetMaster[i])  
             model = func(features,target)
-            hyperParameters += "Subject_" + str(i+1) + "\n"
-            hyperParameters += str(model.best_estimator_) + "\n"
+            if(func.__name__ != 'naiveBayesClassifier'):
+                hyperParameters += "Subject_" + str(i+1) + "\n"
+                hyperParameters += str(model.best_estimator_) + "\n"
             
             #Get the probability of success LR with cross validation.
             predicted, probas, cvScore, newTarget = tenFoldCrossValidator(model,features,target)
@@ -305,8 +315,10 @@ class MyStaticClassifiers:
             train_target = np.array(train_target)
 
             model = func(train_features,train_target)
-            hyperParameters += "Subject_" + str(i+1) + "\n"
-            hyperParameters += str(model.best_estimator_) + "\n"
+            
+            if(func.__name__ != 'naiveBayesClassifier'):
+                hyperParameters += "Subject_" + str(i+1) + "\n"
+                hyperParameters += str(model.best_estimator_) + "\n"
 
             #Get the probability of each state from the prediction of model
             stateProbabilities = model.predict_proba(test_features)
