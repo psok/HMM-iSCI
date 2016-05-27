@@ -1,5 +1,5 @@
-# Author Asma Mehjabeen <amehjabeen@luc.edu>
-# Modified by Pichleap Sok (Jessie)
+# Created Asma Mehjabeen <amehjabeen@luc.edu>
+# Modified by Pichleap Sok (Jessie) <psok@luc.edu>
 import pandas as pd
 from HMMClassification import *  
 from StaticClassification import * 
@@ -52,6 +52,7 @@ def errorMatrix(statesList, targetMaster):
         for row in range(no_states):
             recall_matrix[row][col] = (states_matrix[row][col] / sum_col[col])
         
+    # save confusion matrix, precision and recall to file respectively
     df_confusion = pd.DataFrame(states_matrix, index = ordered_states,
                           columns = ordered_states)
     df_precision = pd.DataFrame(precision_matrix, index = ordered_states,
@@ -63,20 +64,17 @@ def errorMatrix(statesList, targetMaster):
     
 def main():    
     start_time = time.time()
-    # classifierObject: logisticRegression, naiveBayesClassifier, kNearestNeighborsClassifier, decisionTreeClassification, SVMClassifier
-    # randomForestClassifier
     
     classifierObject = MyStaticClassifiers()
     methodNames = [classifierObject.SVMClassifier, classifierObject.logisticRegression, classifierObject.decisionTreeClassification, 
-                   classifierObject.kNearestNeighborsClassifier, classifierObject.naiveBayesClassifier, classifierObject.randomForestClassifier]
-
+                 classifierObject.kNearestNeighborsClassifier, classifierObject.naiveBayesClassifier, classifierObject.randomForestClassifier]
+#
     for methodName in methodNames:
         
         folder = methodName.__name__
         print(folder)
-        validations = [Constants.TenFold, Constants.SubjectWise]
+        validations = [Constants.TenFold, Constants.SubjectWise, Constants.WithinSubjectwise]
         for validation in validations:
-            #validation = Constants.SubjectWise
             
             filePath = Constants.FINAL_RESULTS_FOLDER + folder + '/' + validation + '/'
             
@@ -88,7 +86,7 @@ def main():
             featuresMaster, targetMaster = getFTArrays()
             
             if validation == Constants.TenFold:
-                predictedList, probabilitiesList, targetMaster = classifierObject.tenFoldValidationOnSubjects(
+                predictedList, probabilitiesList, targetMaster = classifierObject.nFoldValidationOnSubjects(
                                                                                 methodName, 
                                                                                 featuresMaster, 
                                                                                 targetMaster, 
@@ -99,23 +97,31 @@ def main():
                                                                                 featuresMaster, 
                                                                                 targetMaster, 
                                                                                 staticFilePath)
+            else:
+                predictedList, probabilitiesList, targetMaster = classifierObject.withinSubjectWiseValidation(
+                                                                                methodName,
+                                                                                featuresMaster, 
+                                                                                targetMaster, 
+                                                                                staticFilePath)                                           
         
             df_confusion, df_precision, df_recall = errorMatrix(predictedList, targetMaster)
             saveToCsv(df_confusion, filePath + "Error_Matrix.csv")
             saveToCsv(df_precision, filePath + "Precision_Matrix.csv")
             saveToCsv(df_recall, filePath + "Recall_Matrix.csv")
             print(df_confusion)
-            #print(df_precision)
-            #print(df_recall)
+            print(df_precision)
+            print(df_recall)
             
             hmmFilePath = filePath + Constants.HMMFolder + '/'
             if not os.path.exists(hmmFilePath):    
                 os.makedirs(hmmFilePath)
             
             if validation == Constants.TenFold:
-                HmmStatesList, targetMaster = hmm.hmm10foldValidation(targetMaster,probabilitiesList, hmmFilePath)
+                HmmStatesList, targetMaster = hmm.hmmNFoldValidation(targetMaster,probabilitiesList, hmmFilePath)
             elif validation == Constants.SubjectWise:
                 HmmStatesList = hmm.hmmClassifierSubjectWiseValidation(targetMaster,probabilitiesList, hmmFilePath)
+            else:
+                HmmStatesList, targetMaster = hmm.hmmWithinSubjectWiseValidation(targetMaster,probabilitiesList, hmmFilePath)
             
             
             df_confusion, df_precision, df_recall = errorMatrix(HmmStatesList, targetMaster)
@@ -123,8 +129,8 @@ def main():
             saveToCsv(df_precision, filePath + "HMM_Precision_Matrix.csv")
             saveToCsv(df_recall, filePath + "HMM_Recall_Matrix.csv")
             print(df_confusion)
-            #print(df_precision)
-            #print(df_recall)
+            print(df_precision)
+            print(df_recall)
             
             overalResultFilename = hmmFilePath + 'Overall_Result.csv'      
                 

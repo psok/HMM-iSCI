@@ -1,3 +1,5 @@
+# Rewritten by Pichleap Sok (Jessie) <psok@luc.edu>
+
 import numpy as np
 import pandas as pd
 from myHmm import GaussianHMM
@@ -115,13 +117,13 @@ class HMMClassification:
             normalize(transition_matrix, axis=1)
             
 #==============================================================================
-#         #Save transition_matrix and initial probabilities to file 
-#         #(One time only because transition matrix is consistent)
-#         filename = Constants.FINAL_RESULTS_FOLDER + 'HMMParameters.csv'
-#         df = pd.DataFrame(transition_matrix, index = activities, columns = activities)
-#         df.to_csv(filename)
-#         df = pd.DataFrame(initial_state_prob)
-#         df.to_csv(filename, index_col=False, header=False, mode = 'a')
+        #Save transition_matrix and initial probabilities to file 
+        #(One time only because transition matrix is consistent)
+        filename = Constants.FINAL_RESULTS_FOLDER + 'HMMParameters.csv'
+        df = pd.DataFrame(transition_matrix, index = activities, columns = activities)
+        df.to_csv(filename)
+        df = pd.DataFrame(initial_state_prob)
+        df.to_csv(filename, index_col=False, header=False, mode = 'a')
 #==============================================================================
         
         return transition_matrix,initial_state_prob
@@ -141,6 +143,10 @@ class HMMClassification:
         df['target'] = target
 
         df = df.groupby(['target']).mean()
+        
+        filename = Constants.FINAL_RESULTS_FOLDER + 'HMMParameters.csv'
+        df.to_csv(filename, index_col=False, header=False, mode = 'a')
+        
         meansArray = np.array(df)
         return meansArray
         
@@ -224,7 +230,7 @@ class HMMClassification:
                 mySum += 1
         return (mySum/float(len(B)))
         
-    def hmm10foldValidation(self,targetMaster,probabilitiesMaster, filePath):
+    def hmmNFoldValidation(self,targetMaster,probabilitiesMaster, filePath):
 
         listLength = len(targetMaster)
         
@@ -232,7 +238,7 @@ class HMMClassification:
         HMMStatesList = []
         newTargetList = []
         
-        activities = np.array(['Lying', 'Sitting', 'Wheeling', 'Standing', 'Walking', 'StairClimbing'], dtype='<U13')
+        activities = np.array(['Lying', 'Sitting', 'StairClimbing', 'Standing', 'Walking', 'Wheeling'], dtype='<U13')
         markov_chain = [item for sublist in targetMaster for item in sublist]   #just a flatten list of targetMaster      
         transition_prob, initial_state_vector = self.getHMMProbabilities(markov_chain, activities)
         train_features = [item for sublist in probabilitiesMaster for item in sublist]
@@ -245,7 +251,7 @@ class HMMClassification:
             train = np.array(probabilitiesMaster[i])
             target = np.array(targetMaster[i])
             
-            kf_total = cross_validation.KFold(len(train), n_folds=15, shuffle=False, random_state=6)
+            kf_total = cross_validation.KFold(len(train), n_folds=20, shuffle=False, random_state=6)
         
             scores = []
             predicted = []
@@ -326,7 +332,7 @@ class HMMClassification:
                     test_target = targetMaster[k]
                 else:
                     #training data                
-                    lrProb = (probabilitiesMaster[k])
+                    lrProb = probabilitiesMaster[k]
                     #print  ("Shape: k= "+str(k)+" "+str(lrProb.shape))
                     train_lrProb += lrProb.tolist()
                     target = targetMaster[k].tolist()
@@ -358,6 +364,75 @@ class HMMClassification:
 
         return HMMStatesList
 
+    def hmmWithinSubjectWiseValidation(self,targetMaster,probabilitiesMaster, filePath):
+        
+        listLength = len(targetMaster)
+        
+        HMMScoresList = []
+        HMMStatesList = []
+        newTargetList = []
+        
+        activities = np.array(['Lying', 'Sitting', 'StairClimbing', 'Standing', 'Walking', 'Wheeling'], dtype='<U13')
+        markov_chain = [item for sublist in targetMaster for item in sublist]   #just a flatten list of targetMaster      
+        transition_prob, initial_state_vector = self.getHMMProbabilities(markov_chain, activities)
+        train_features = [item for sublist in probabilitiesMaster for item in sublist]
+        train_target = [item for sublist in targetMaster for item in sublist]
+        meansArray = self.getMeans(train_features,train_target)
+        
+        accuracy_str = ""
+        
+        for i in range(listLength):
+            train = np.array(probabilitiesMaster[i])
+            target = np.array(targetMaster[i])
+            
+            kf_total = cross_validation.KFold(len(train), n_folds=10, shuffle=False, random_state=6)
+        
+            scores = []
+            predicted = []
+            newTarget = []
+            for train_index, test_index in kf_total:
+                train_prob = []
+                test_prob = []
+                train_target = []
+                test_target = []
+                
+                for k in range(listLength):
+                    if(k == i):
+                        test_prob = train[test_index]
+                        test_target = target[test_index]  
+                        train_prob += train[train_index].tolist()
+                        train_target += target[train_index].tolist()
+                        
+                    else:
+                        train_prob += probabilitiesMaster[k].tolist() 
+                        train_target += targetMaster[k].tolist()
+                        
+                hmmModel = self.trainHmmClassifier(train_prob,train_target,transition_prob,initial_state_vector,meansArray)
+                cvScore,hmmstates = self.testHmmClassifier(hmmModel,test_prob,test_target,activities)
+                scores.append(cvScore)
+                predicted.append(hmmstates)
+                newTarget.append(test_target)
+        
+            score = np.mean(scores)
+            predicted = [item for sublist in predicted for item in sublist]
+            newTarget = [item for sublist in newTarget for item in sublist]
+    
+            HMMScoresList.append(score)
+            HMMStatesList.append(predicted)
+            newTargetList.append(newTarget)
+            print(('HMM Within-Subjectwise Accuracy Subject_' + str(i+1) + ' = ' + str(score) + '%'))
+            accuracy_str += 'HMM Within-Subjectwise Accuracy Subject_' + str(i+1) + ' = ' + str(score) + '%' + '\n'
+            
+        print(('Overall HMM Within-Subjectwise Accuracy = ' + str(np.mean(HMMScoresList)) + '%'))
+        accuracy_str += 'Overall HMM Within-Subjectwise Accuracy = ' + str(np.mean(HMMScoresList)) + '%'
+        
+        # Write accuracy of each subject to file
+        filename = filePath + Constants.HMMFolder + '_WithinSubjectwise_Accuracy.txt'
+        with open(filename, "w") as textfile:
+            textfile.write(accuracy_str)
+            
+        return HMMStatesList,newTargetList
+        
     def HmmPerSubject(self,targetMaster,probabilitiesList):
         """A method written to train the model on a single subjects data and test it on the same. No cross-validation done.
         
@@ -385,6 +460,7 @@ class HMMClassification:
             print(('Hybrid Classifier Accuracy Subject_'+str(i+1)+' = '+str(score)+'%'))        
         print(('Hybrid Classifier Accuracy = '+str(np.mean(HMMScores))+'%'))
         return HMMStates
+        
     def adjustProbabilities(self,probabilitiesMaster,targetMaster):
         """Method to standardize the data by adding missing activities so that subject wise cross validation can be done.
         It finds the largest set of activities from among the users. For example: Subject 13 is currently doing only 4 activities and Subject 1 does 5.

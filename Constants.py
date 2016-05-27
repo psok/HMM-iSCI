@@ -11,6 +11,7 @@ class Constants():
     #-----Used in Results.py and HMMCode.py----------------#
     SubjectWise = 'SubjectWise'
     TenFold = 'TenFold'
+    WithinSubjectwise = 'WithinSubjectwise'
     ResultsFolderList = [SubjectWise,TenFold]
     HMMFolder = 'HMM'
     StaticFolder = 'Static'

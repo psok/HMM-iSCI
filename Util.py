@@ -32,8 +32,8 @@ def normalize(A, axis=None):
         Asum.shape = shape
     return A / Asum
     
-def tenFoldCrossValidator(model,train,target):
-    """Cross validate the model using 10-fold cross validation. This method uses the KFold cross validation from sklearn toolkit
+def nFoldCrossValidator(model,train,target):
+    """Cross validate the model using 20-fold cross validation. This method uses the KFold cross validation from sklearn toolkit
     
     Parameters
     ----------
@@ -46,7 +46,7 @@ def tenFoldCrossValidator(model,train,target):
     --------
     score: Cross validated score as a percentage. (float)"""
     #Setting up cross validation
-    kf_total = cross_validation.KFold(len(train), n_folds=15, shuffle=False, random_state=6)
+    kf_total = cross_validation.KFold(len(train), n_folds=20, shuffle=False, random_state=6)
     scoreArray = cross_validation.cross_val_score(model, train, target, cv=kf_total, n_jobs = 1)
     
     probabilitiesList = []
